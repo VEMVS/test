@@ -23,30 +23,41 @@ def create_note(note: schemas.PostCreate, db: Session = Depends(get_db)):
 def get_all_notes(db: Session = Depends(get_db)):
     return db.query(models.Note).all()
 
+
 @router.get("/{note_id}", response_model=schemas.PostResponse)
 def get_note(note_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Note).filter(models.Note.id == note_id).first()
+    note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Заметка не найдена"
+        )
+    return note
+
 
 @router.put("/{note_id}", response_model=schemas.PostResponse)
 def put_note(
-    note_id: int, 
-    update_note: schemas.PostUpdate, 
-    db: Session = Depends(get_db)
+    note_id: int, update_note: schemas.PostUpdate, db: Session = Depends(get_db)
 ):
     note_query = db.query(models.Note).filter(models.Note.id == note_id)
-    note_query.update(update_note.model_dump(), synchronize_session='fetch')
+    note = note_query.first()
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Заметка с id: {note_id} не найдена",
+        )
+    note_query.update(update_note.model_dump(), synchronize_session="fetch")
     db.commit()
     update_note = note_query.first()
     return update_note
 
+
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_note(
-    note_id: int, 
-    db: Session = Depends(get_db)
-):
+def delete_note(note_id: int, db: Session = Depends(get_db)):
     note = db.query(models.Note).filter(models.Note.id == note_id).first()
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Заметка с id: {note_id} не найдена",
+        )
     db.delete(note)
     db.commit()
-    
-
-

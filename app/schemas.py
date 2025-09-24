@@ -12,7 +12,6 @@ class PostCreate(PostBase):
 
 class PostResponse(PostBase):
     id: int
-    pass 
 
 class PostUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
@@ -20,12 +19,14 @@ class PostUpdate(BaseModel):
 
     model_config = {"from_attributes": True}
 
-class UserBase(BaseModel):
+class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
     model_config = {"from_attributes": True}
 
-class UserLogin(UserBase):
-    pass
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
 
+    model_config = {"from_attributes": True}
