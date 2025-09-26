@@ -1,7 +1,7 @@
 from ..db import get_db
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Depends, APIRouter
-from .. import models, schemas
+from .. import models, schemas, oauth2, utils
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -9,13 +9,18 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    email = user.email.strip().lower()
     existing = db.query(models.Users).filter(models.Users.email == user.email).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Этот адрес электронной почты уже используется",
         )
-    new_user = models.Users(**user.model_dump())
+    user_data = user.model_dump()
+    user_data["email"] = email
+    user_data["password"] = utils.hash(user_data["password"])
+
+    new_user = models.Users(**user_data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
